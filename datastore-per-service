@@ -1,0 +1,162 @@
+###Deploy the MongoDB to Kubernetes###
+
+MongoDB instance will run inside a separate namespace in Kubernetes 
+
+kubectl create namespace mongodb-store
+namespace/mongodb-store created
+
+###Statefulset Creation###
+ 
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-store
+  namespace: mongodb-store
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-store
+  template:
+    metadata:
+      labels:
+        app: mongodb-store
+        selector: mongodb-store
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:4.0.17
+
+#kubectl apply 
+statefulset.apps/mongodb-store created 
+
+###Service Creation###
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: mongodb-store
+  labels:
+    app: mongodb-store
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-store
+
+$ kubectl get pods -n mongodb-store
+NAME              READY   STATUS    RESTARTS   AGE
+mongodb-store-0   1/1     Running   0          103s 
+
+###Deployment Creation###
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-service
+  labels:
+    app: store-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: store-service
+  template:
+    metadata:
+      labels:
+        app: store-service
+    spec:
+      containers:
+        - name: store
+          image: learncloudnative/store-service:0.1.0
+          imagePullPolicy: Always
+          env:
+            - name: MONGO_URL
+              value: mongodb://mongodb.mongodb-store:27017
+          ports:
+            - containerPort: 3000
+
+### Spec - NodePort Expose ###
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: store-service
+spec:
+  type: NodePort
+  selector:
+    app: store-service
+  ports:
+    - protocol: TCP
+      nodePort: 30000
+      port: 80
+      targetPort: 3000
+
+####Separate Inventory Store####
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-inventory
+  namespace: mongodb-inventory
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-inventory
+  template:
+    metadata:
+      labels:
+        app: mongodb-inventory
+        selector: mongodb-inventory
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:4.0.17
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: mongodb-inventory
+  labels:
+    app: mongodb-inventory
+spec:
+  clusterIP: None
+  selector:
+    app: mongodb-inventory
+
+
+###Deployment###
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-service
+  labels:
+    app: store-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: store-service
+  template:
+    metadata:
+      labels:
+        app: store-service
+    spec:
+      containers:
+        - name: store
+          image: learncloudnative/store-service:0.1.0
+          imagePullPolicy: Always
+          env:
+            - name: MONGO_URL
+              value: mongodb://mongodb.mongodb-store:27017
+            - name: INVENTORY_URL
+              value: http://inventory-service.default
+            - name: FEATURE_FLAG
+              value: WRITE_INVENTORY_READ_INVENTORY
+          ports:
+            - containerPort: 3000

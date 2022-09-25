@@ -1,0 +1,51 @@
+
+[direct: mongos] test> db.books.getShardDistribution()
+Shard shard2 at shard2/shard2:27019
+{
+  data: '188KiB',
+  docs: 154,
+  chunks: 2,
+  'estimated data per chunk': '94KiB',
+  'estimated docs per chunk': 77
+}
+---
+Shard shard3 at shard3/shard3:27020
+{
+  data: '164KiB',
+  docs: 142,
+  chunks: 2,
+  'estimated data per chunk': '82KiB',
+  'estimated docs per chunk': 71
+}
+---
+Shard shard1 at shard1/shard1:27018
+{
+  data: '152KiB',
+  docs: 135,
+  chunks: 2,
+  'estimated data per chunk': '76KiB',
+  'estimated docs per chunk': 67
+}
+---
+Totals
+{
+  data: '505KiB',
+  docs: 431,
+  chunks: 6,
+  'Shard shard2': [
+    '37.31 % data',
+    '35.73 % docs in cluster',
+    '1KiB avg obj size on shard'
+  ],
+  'Shard shard3': [
+    '32.49 % data',
+    '32.94 % docs in cluster',
+    '1KiB avg obj size on shard'
+  ],
+  'Shard shard1': [
+    '30.19 % data',
+    '31.32 % docs in cluster',
+    '1KiB avg obj size on shard'
+  ]
+}
+[direct: mongos] test> 
